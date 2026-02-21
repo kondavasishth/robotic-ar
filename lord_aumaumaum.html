@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Assisted Lightweight Robotic Hand | Optic Command</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-blue: #00f2ff;
+            --neon-purple: #bc13fe;
+            --dark-bg: #05070a;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text: #e6edf3;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(0, 242, 255, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(188, 19, 254, 0.05) 0px, transparent 50%);
+            color: var(--text);
+            font-family: 'Rajdhani', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* --- BRANDING --- */
+        .brand-wrap { display: flex; flex-direction: column; align-items: center; margin-bottom: 30px; text-align: center; }
+        .iris-logo { position: relative; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; }
+        .neural-node { width: 15px; height: 15px; background: var(--neon-blue); border-radius: 50%; box-shadow: 0 0 20px var(--neon-blue); animation: core-pulse 2s infinite ease-in-out; }
+        .actuator-ring { position: absolute; width: 100%; height: 100%; border: 2px dashed var(--neon-blue); border-radius: 50%; animation: rotate-ring 6s linear infinite; opacity: 0.4; }
+        
+        @keyframes core-pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } }
+        @keyframes rotate-ring { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        .title-main { 
+            font-family: 'Orbitron', sans-serif; 
+            font-size: 1.2rem; 
+            letter-spacing: 2px; 
+            margin-top: 15px; 
+            max-width: 800px;
+            background: linear-gradient(90deg, #fff, var(--neon-blue)); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            text-transform: uppercase;
+        }
+
+        /* --- DASHBOARD LAYOUT --- */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        /* --- OPTIC FEED (CAMERA) --- */
+        .optic-panel {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .video-wrap {
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #000;
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #222;
+        }
+
+        #cameraFeed { width: 100%; height: 100%; object-fit: cover; filter: brightness(1.2) contrast(1.1) saturate(0.8); }
+
+        /* HUD OVERLAY */
+        .hud-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .crosshair {
+            width: 100px; height: 100px;
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .crosshair::before, .crosshair::after {
+            content: ""; position: absolute; background: var(--neon-blue);
+        }
+        .crosshair::before { width: 100%; height: 1px; top: 50%; left: 0; }
+        .crosshair::after { width: 1px; height: 100%; left: 50%; top: 0; }
+
+        .scan-line {
+            position: absolute;
+            width: 100%; height: 2px;
+            background: rgba(0, 242, 255, 0.1);
+            box-shadow: 0 0 10px var(--neon-blue);
+            top: 0;
+            animation: scan 3s linear infinite;
+        }
+
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+
+        /* --- COMMAND PANEL --- */
+        .container {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            padding: 30px;
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .status-pill { background: rgba(0,0,0,0.4); padding: 6px 15px; border-radius: 20px; border: 1px solid #222; font-size: 0.7rem; display: flex; align-items: center; gap: 8px; }
+        .status-dot { height: 8px; width: 8px; border-radius: 50%; background: #ff4b2b; }
+        .connected .status-dot { background: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue); }
+
+        .btn {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); color: #fff;
+            padding: 10px 18px; border-radius: 8px; cursor: pointer; font-family: 'Orbitron'; font-size: 0.6rem;
+            text-transform: uppercase; transition: 0.3s;
+        }
+        .btn:hover { border-color: var(--neon-blue); background: rgba(0, 242, 255, 0.05); }
+        .btn.active { background: var(--neon-blue); color: #000; border: none; font-weight: bold; }
+
+        .slider-box { margin-bottom: 15px; }
+        .slider-box label { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 8px; color: #888; }
+        .val-num { color: var(--neon-blue); font-family: 'Orbitron'; }
+        
+        .slider { -webkit-appearance: none; width: 100%; height: 2px; background: #222; outline: none; }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 14px; height: 14px; background: #fff;
+            border-radius: 50%; cursor: pointer; border: 2px solid var(--neon-blue);
+        }
+
+        .hidden { display: none; }
+
+        @media (max-width: 900px) {
+            .dashboard { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body id="body">
+
+<div class="brand-wrap">
+    <div class="iris-logo">
+        <div class="neural-node"></div>
+        <div class="actuator-ring"></div>
+    </div>
+    <div class="title-main">AI-Assisted Lightweight Robotic Hand for Intelligent Force & Motion Control</div>
+</div>
+
+<div class="dashboard">
+    <div class="optic-panel">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div class="status-pill" style="border-color: var(--neon-blue);"><i class="fas fa-eye"></i> OPTIC FEED</div>
+            <div style="display: flex; gap: 10px;">
+                <button id="flipBtn" class="btn hidden"><i class="fas fa-sync"></i> Flip</button>
+                <button id="cameraBtn" class="btn"><i class="fas fa-video"></i> Init Camera</button>
+            </div>
+        </div>
+        
+        <div class="video-wrap">
+            <video id="cameraFeed" autoplay playsinline muted></video>
+            <div class="hud-overlay">
+                <div class="scan-line"></div>
+                <div class="crosshair"></div>
+                <div style="position: absolute; bottom: 10px; left: 10px; font-size: 0.6rem; color: var(--neon-blue); font-family: 'Orbitron';">
+                    SCANNING FOR TARGETS...<br>COORDS: <span id="cam-coords">X:0 Y:0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px; color: #555; font-size: 0.7rem; letter-spacing: 1px;">
+            <i class="fas fa-info-circle"></i> Use the feed to align the gripper over the object. Mobile users can toggle cameras.
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="top-bar">
+            <div class="status-pill">
+                <span class="status-dot"></span>
+                <span id="status-text">SYSTEM OFFLINE</span>
+            </div>
+            <button id="connectBtn" class="btn"><i class="fas fa-bolt"></i> Establish Link</button>
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 25px;">
+            <button id="manualBtn" class="btn active" style="flex: 1;">Manual</button>
+            <button id="aiBtn" class="btn" style="flex: 1;">Neural Sync</button>
+        </div>
+
+        <div id="manualPanel">
+            <div class="slider-box">
+                <label>BASE ROTATION <span class="val-num" id="v-base">90°</span></label>
+                <input type="range" class="slider" id="s-base" min="0" max="180" value="90">
+            </div>
+            <div class="slider-box">
+                <label>SHOULDER TILT <span class="val-num" id="v-shoulder">90°</span></label>
+                <input type="range" class="slider" id="s-shoulder" min="0" max="180" value="90">
+            </div>
+            <div class="slider-box">
+                <label>ELBOW FLEX <span class="val-num" id="v-elbow">90°</span></label>
+                <input type="range" class="slider" id="s-elbow" min="0" max="180" value="90">
+            </div>
+            <div class="slider-box">
+                <label>GRIPPER <span class="val-num" id="v-gripper">50°</span></label>
+                <input type="range" class="slider" id="s-gripper" min="0" max="180" value="50">
+            </div>
+            
+            <div style="margin: 20px 0; border-top: 1px solid #222;"></div>
+            <div style="font-size: 0.6rem; color: #444; text-transform: uppercase; text-align: center;">Arrow Keys: Base/Shoulder | W/S: Elbow | Space: Grip</div>
+        </div>
+
+        <div id="aiPanel" class="hidden">
+            <div style="text-align: center; border: 1px solid var(--neon-purple); padding: 30px; border-radius: 15px;">
+                <i class="fas fa-brain" style="font-size: 2rem; color: var(--neon-purple); margin-bottom: 15px;"></i>
+                <div id="sensor-readout" style="font-family: 'Orbitron'; font-size: 0.9rem; color: #fff;">
+                    AWAITING BIO-TELEMETRY...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let port, writer, videoStream;
+    let currentFacingMode = 'environment'; // Start with back camera on mobile
+    let angles = { base: 90, shoulder: 90, elbow: 90, gripper: 50 };
+
+    const cameraBtn = document.getElementById('cameraBtn');
+    const flipBtn = document.getElementById('flipBtn');
+    const video = document.getElementById('cameraFeed');
+
+    // --- ENHANCED CAMERA LOGIC ---
+    async function startCamera(mode) {
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+        }
+
+        const constraints = {
+            video: {
+                facingMode: { ideal: mode },
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            },
+            audio: false
+        };
+
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = videoStream;
+            cameraBtn.innerHTML = '<i class="fas fa-video-slash"></i> Kill Feed';
+            
+            // Check if device has multiple cameras to show flip button
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(d => d.kind === 'videoinput');
+            if (videoDevices.length > 1) {
+                flipBtn.classList.remove('hidden');
+            }
+        } catch (err) {
+            alert("Camera Access Denied: " + err.message);
+        }
+    }
+
+    cameraBtn.onclick = () => {
+        if (!videoStream) {
+            startCamera(currentFacingMode);
+        } else {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+            video.srcObject = null;
+            cameraBtn.innerHTML = '<i class="fas fa-video"></i> Init Camera';
+            flipBtn.classList.add('hidden');
+        }
+    };
+
+    flipBtn.onclick = () => {
+        currentFacingMode = (currentFacingMode === 'user') ? 'environment' : 'user';
+        startCamera(currentFacingMode);
+    };
+
+    // --- SERIAL LINK LOGIC ---
+    document.getElementById('connectBtn').onclick = async () => {
+        if (!navigator.serial) {
+            alert("Note: Web Serial is not supported on mobile browsers (iOS/Android). Please use a Desktop browser to connect the robot.");
+            return;
+        }
+        try {
+            port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 9600 });
+            writer = port.writable.getWriter();
+            document.getElementById('body').classList.add('connected');
+            document.getElementById('status-text').innerText = "LINK ESTABLISHED";
+            readLoop();
+        } catch (e) { alert("Core Failure: " + e.message); }
+    };
+
+    function switchMode(mode) {
+        document.getElementById('manualBtn').classList.toggle('active', mode === 'manual');
+        document.getElementById('aiBtn').classList.toggle('active', mode === 'ai');
+        document.getElementById('manualPanel').classList.toggle('hidden', mode === 'ai');
+        document.getElementById('aiPanel').classList.toggle('hidden', mode === 'manual');
+    }
+
+    document.getElementById('manualBtn').onclick = () => switchMode('manual');
+    document.getElementById('aiBtn').onclick = () => switchMode('ai');
+
+    const updateUI = (part, val) => {
+        document.getElementById(`v-${part}`).innerText = val + "°";
+        document.getElementById(`s-${part}`).value = val;
+        if(writer) send(`${part[0].toUpperCase()}${val}`);
+    };
+
+    ['base', 'shoulder', 'elbow', 'gripper'].forEach(part => {
+        document.getElementById(`s-${part}`).oninput = (e) => {
+            angles[part] = parseInt(e.target.value);
+            updateUI(part, angles[part]);
+        };
+    });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft')  { angles.base = Math.min(180, angles.base + 5); updateUI('base', angles.base); }
+        if (e.key === 'ArrowRight') { angles.base = Math.max(0, angles.base - 5); updateUI('base', angles.base); }
+        if (e.key === 'ArrowUp')    { angles.shoulder = Math.min(180, angles.shoulder + 5); updateUI('shoulder', angles.shoulder); }
+        if (e.key === 'ArrowDown')  { angles.shoulder = Math.max(0, angles.shoulder - 5); updateUI('shoulder', angles.shoulder); }
+        if (e.key === 'w' || e.key === 'W') { angles.elbow = Math.min(180, angles.elbow + 5); updateUI('elbow', angles.elbow); }
+        if (e.key === 's' || e.key === 'S') { angles.elbow = Math.max(0, angles.elbow - 5); updateUI('elbow', angles.elbow); }
+        if (e.key === ' ') { angles.gripper = angles.gripper > 90 ? 0 : 180; updateUI('gripper', angles.gripper); e.preventDefault(); }
+    });
+
+    async function send(cmd) {
+        const encoder = new TextEncoder();
+        await writer.write(encoder.encode(cmd + "\n"));
+    }
+
+    async function readLoop() {
+        const decoder = new TextDecoder();
+        while (port.readable) {
+            const reader = port.readable.getReader();
+            try {
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    document.getElementById('sensor-readout').innerText = decoder.decode(value);
+                }
+            } finally { reader.releaseLock(); }
+        }
+    }
+</script>
+</body>
+</html>
